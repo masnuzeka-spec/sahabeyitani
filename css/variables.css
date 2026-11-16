@@ -1,0 +1,52 @@
+:root {
+  /* Profesyonel Renk Sistemi */
+  --color-deep-emerald: #0F3D35;
+  --color-dark-emerald: #165247;
+  --color-gold: #C8963E;
+  --color-dark-gold: #9A6D1F;
+  --color-off-white: #F7F6F2;
+  --color-parchment: #EFECE6;
+  --color-text-primary: #18221F;
+  --color-text-secondary: #5A6561;
+  --color-success: #1F7A54;
+  --color-error: #B9382C;
+  --color-warning: #B86B19;
+
+  --color-success-bg: rgba(31, 122, 84, 0.12);
+  --color-error-bg: rgba(185, 56, 44, 0.12);
+  --color-warning-bg: rgba(184, 107, 25, 0.14);
+  --color-gold-soft: rgba(200, 150, 62, 0.14);
+
+  /* Tipografi */
+  --font-heading: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-sans: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-arabic: "Traditional Arabic", "Amiri", "Scheherazade New", Georgia, serif;
+  --bio-font-scale: 1;
+
+  /* Boşluk Ölçeği */
+  --space-xs: 0.375rem;
+  --space-sm: 0.625rem;
+  --space-md: 1rem;
+  --space-lg: 1.375rem;
+  --space-xl: 1.875rem;
+  --space-2xl: 2.5rem;
+
+  /* Köşe Yuvarlaklığı */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Profesyonel Yumuşak Gölgeler */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 2px 6px rgba(15, 23, 42, 0.03);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 12px 28px rgba(15, 23, 42, 0.12);
+
+  /* Boyutlar ve Safe Area */
+  --header-height: 58px;
+  --bottom-nav-height: 62px;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --container-max: 920px;
+  --touch-target: 42px;
+}

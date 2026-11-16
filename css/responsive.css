@@ -1,0 +1,67 @@
+/* 320px Küçük Ekran Desteği */
+@media (max-width: 359px) {
+  .app-main {
+    padding: 10px;
+  }
+
+  .brand-link {
+    font-size: 1.05rem;
+  }
+
+  .home-nav-grid.grid-2x2 {
+    gap: 8px;
+  }
+
+  .home-nav-grid.grid-2x2 .home-action-card {
+    padding: 10px;
+  }
+
+  .home-nav-grid.grid-2x2 .home-action-title {
+    font-size: 0.95rem;
+  }
+
+  .home-nav-grid.grid-2x2 .home-action-desc {
+    font-size: 0.74rem;
+    text-align: left;
+  }
+
+  .bottom-nav-item {
+    font-size: 0.66rem;
+    padding: 2px 1px;
+  }
+
+  .bottom-nav-item svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .page-title {
+    font-size: 1.45rem;
+  }
+}
+
+/* Orta Ekran (Tablet / Geniş Telefon >= 600px) */
+@media (min-width: 600px) {
+  .onboarding-features-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summary-stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Büyük Ekran (Masaüstü >= 920px) */
+@media (min-width: 920px) {
+  .cards-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .app-main {
+    padding: var(--space-lg);
+  }
+}
