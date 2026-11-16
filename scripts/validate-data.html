@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veri Doğrulama Paneli — SAHABEYİ TANI</title>
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/reset.css">
+  <style>
+    body {
+      background-color: var(--color-off-white);
+      color: var(--color-text-primary);
+      padding: 1.5rem;
+      max-width: 1024px;
+      margin: 0 auto;
+    }
+    .val-header {
+      background-color: var(--color-deep-emerald);
+      color: var(--color-off-white);
+      padding: 1.5rem;
+      border-radius: var(--radius-md);
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--color-gold);
+    }
+    .val-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .val-card {
+      background: #FFFFFF;
+      border: 1px solid rgba(6, 47, 42, 0.15);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      border-left: 6px solid #ccc;
+    }
+    .val-card.pass {
+      border-left-color: var(--color-success);
+      background-color: var(--color-success-bg);
+    }
+    .val-card.warn {
+      border-left-color: var(--color-warning);
+      background-color: var(--color-warning-bg);
+    }
+    .val-card.fail {
+      border-left-color: var(--color-error);
+      background-color: var(--color-error-bg);
+    }
+    .status-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .pass .status-pill { background: var(--color-success); color: #fff; }
+    .warn .status-pill { background: var(--color-warning); color: #fff; }
+    .fail .status-pill { background: var(--color-error); color: #fff; }
+    .val-title { font-weight: 800; font-size: 1rem; margin-bottom: 4px; }
+    .val-detail { font-size: 0.88rem; color: var(--color-text-primary); }
+  </style>
+</head>
+<body>
+  <header class="val-header">
+    <h1 style="color:var(--color-gold);font-size:1.5rem;">SAHABEYİ TANI — Veri Doğrulama Sayfası</h1>
+    <p style="margin-top:4px;font-size:0.95rem;">82 sahabî verisi, kategoriler, ipuçları ve soru havuzu bütünlük kontrolleri.</p>
+  </header>
+
+  <div id="summary-banner" style="margin-bottom:1.25rem;"></div>
+  <div id="checks-grid" class="val-grid"></div>
+  <div id="issues-log"></div>
+
+  <script type="module">
+    import CATEGORIES from "../data/categories.js";
+    import SAHABIS from "../data/sahabis-index.js";
+
+    const validCategoryIds = new Set(CATEGORIES.map(c => c.id));
+    const activeSahabis = SAHABIS.filter(s => s && s.active);
+
+    // 1. Her aktif sahabîde en az 20 soru var mı?
+    const under20Sahabis = activeSahabis.filter(s => !Array.isArray(s.questions) || s.questions.length < 20);
+
+    // 2. Her soruda dört benzersiz seçenek var mı?
+    const invalidOptionCountQuestions = [];
+    // 3. Doğru cevap seçenekler içinde bulunuyor mu?
+    const missingCorrectOptionQuestions = [];
+    // 4. Soru ID değerleri benzersiz mi?
+    const questionIds = new Set();
+    const duplicateQuestionIds = [];
+    // 5. Sahabî ID değerleri benzersiz mi?
+    const sahabiIds = new Set();
+    const duplicateSahabiIds = [];
+    // 6. Kategori kimlikleri geçerli mi?
+    const invalidCategoryRefs = [];
+    // 7. Her Kimim Ben kaydında 5 ipucu var mı?
+    const invalidWhoAmISahabis = [];
+    // 8. Her sahabîde en az bir hayat bölümü var mı?
+    const missingLifeSectionsSahabis = [];
+    // 9. Boş soru veya seçenek var mı?
+    const emptyTextIssues = [];
+    // 10. Birebir tekrarlanan sorular var mı?
+    const questionTexts = new Set();
+    const duplicateQuestionTexts = [];
+    // 11. Video bağlantısı var mı?
+    const missingVideoSahabis = [];
+
+    let totalQuestionsCount = 0;
+
+    for (const s of SAHABIS) {
+      if (sahabiIds.has(s.id)) {
+        duplicateSahabiIds.push(s.id);
+      }
+      sahabiIds.add(s.id);
+
+      if (!Array.isArray(s.categories) || s.categories.length === 0) {
+        invalidCategoryRefs.push(`${s.id}: kategori boş`);
+      } else {
+        for (const cid of s.categories) {
+          if (!validCategoryIds.has(cid)) {
+            invalidCategoryRefs.push(`${s.id}: geçersiz kategori '${cid}'`);
+          }
+        }
+      }
+
+      if (!s.whoAmI || !Array.isArray(s.whoAmI.hints) || s.whoAmI.hints.length < 5 || s.whoAmI.hints.some(h => !String(h || "").trim())) {
+        invalidWhoAmISahabis.push(s.id);
+      }
+
+      if (!Array.isArray(s.lifeSections) || s.lifeSections.length === 0 || s.lifeSections.some(sec => !Array.isArray(sec.items) || sec.items.length === 0)) {
+        missingLifeSectionsSahabis.push(s.id);
+      }
+
+      if (!s.video || !String(s.video.url || "").trim() || !String(s.video.videoId || "").trim()) {
+        missingVideoSahabis.push(s.id);
+      }
+
+      for (const q of (s.questions || [])) {
+        totalQuestionsCount += 1;
+
+        if (!q.id || questionIds.has(q.id)) {
+          duplicateQuestionIds.push(q.id || s.id);
+        }
+        questionIds.add(q.id);
+
+        const qText = String(q.question || "").trim();
+        if (!qText) {
+          emptyTextIssues.push(`${q.id}: boş soru metni`);
+        } else {
+          if (questionTexts.has(qText)) {
+            duplicateQuestionTexts.push(`${q.id}: ${qText}`);
+          }
+          questionTexts.add(qText);
+        }
+
+        if (!Array.isArray(q.options) || q.options.length !== 4) {
+          invalidOptionCountQuestions.push(`${q.id}: seçenek sayısı ${q.options?.length}`);
+        } else {
+          const trimmedOpts = q.options.map(o => String(o || "").trim());
+          if (trimmedOpts.some(o => !o)) {
+            emptyTextIssues.push(`${q.id}: boş seçenek mevcut`);
+          }
+          const uniqueOpts = new Set(trimmedOpts);
+          if (uniqueOpts.size !== 4) {
+            invalidOptionCountQuestions.push(`${q.id}: mükerrer seçenek mevcut`);
+          }
+          if (!trimmedOpts.includes(String(q.correctAnswer || "").trim())) {
+            missingCorrectOptionQuestions.push(`${q.id}: doğru cevap seçeneklerde yok`);
+          }
+        }
+
+        if (!Array.isArray(q.categories) || q.categories.some(cid => !validCategoryIds.has(cid))) {
+          invalidCategoryRefs.push(`${q.id}: geçersiz soru kategorisi`);
+        }
+
+        if (!String(q.videoUrl || "").trim()) {
+          missingVideoSahabis.push(`${q.id}: soru videoUrl eksik`);
+        }
+      }
+    }
+
+    const checks = [
+      {
+        title: "1. Aktif Sahabî Soru Sayısı (>= 20)",
+        status: under20Sahabis.length === 0 ? "pass" : "fail",
+        detail: under20Sahabis.length === 0
+          ? `${activeSahabis.length} aktif sahabînin tamamında en az 20 soru bulunuyor (Toplam: ${totalQuestionsCount} soru).`
+          : `${under20Sahabis.length} sahabîde 20'den az soru var.`
+      },
+      {
+        title: "2. Dört Benzersiz Seçenek Kontrolü",
+        status: invalidOptionCountQuestions.length === 0 ? "pass" : "fail",
+        detail: invalidOptionCountQuestions.length === 0
+          ? `${totalQuestionsCount} sorunun tamamında 4 benzersiz seçenek doğrulandı.`
+          : `${invalidOptionCountQuestions.length} soruda seçenek hatası bulundu.`
+      },
+      {
+        title: "3. Doğru Cevap Eşleşmesi",
+        status: missingCorrectOptionQuestions.length === 0 ? "pass" : "fail",
+        detail: missingCorrectOptionQuestions.length === 0
+          ? "Tüm sorularda correctAnswer değeri seçenekler içinde birebir yer alıyor."
+          : `${missingCorrectOptionQuestions.length} soruda doğru cevap seçeneklerle eşleşmiyor.`
+      },
+      {
+        title: "4. Benzersiz Soru ID Kontrolü",
+        status: duplicateQuestionIds.length === 0 ? "pass" : "fail",
+        detail: duplicateQuestionIds.length === 0
+          ? `${questionIds.size} benzersiz soru kimliği doğrulandı.`
+          : `${duplicateQuestionIds.length} mükerrer soru ID tespit edildi.`
+      },
+      {
+        title: "5. Benzersiz Sahabî ID Kontrolü",
+        status: duplicateSahabiIds.length === 0 ? "pass" : "fail",
+        detail: duplicateSahabiIds.length === 0
+          ? `${sahabiIds.size} benzersiz sahabî kimliği doğrulandı.`
+          : `${duplicateSahabiIds.length} mükerrer sahabî ID tespit edildi.`
+      },
+      {
+        title: "6. Geçerli Kategori Kimlikleri",
+        status: invalidCategoryRefs.length === 0 ? "pass" : "fail",
+        detail: invalidCategoryRefs.length === 0
+          ? `Tüm sahabî ve soru kategori atamaları (${CATEGORIES.length} kategori) geçerlidir.`
+          : `${invalidCategoryRefs.length} geçersiz kategori referansı bulundu.`
+      },
+      {
+        title: "7. Kimim Ben 5 İpucu Kontrolü",
+        status: invalidWhoAmISahabis.length === 0 ? "pass" : "fail",
+        detail: invalidWhoAmISahabis.length === 0
+          ? `${SAHABIS.length} sahabînin tamamında 5 kademeli Kimim Ben ipucu mevcut.`
+          : `${invalidWhoAmISahabis.length} kayıtta ipucu eksik.`
+      },
+      {
+        title: "8. Hayat Bölümleri (lifeSections) Kontrolü",
+        status: missingLifeSectionsSahabis.length === 0 ? "pass" : "fail",
+        detail: missingLifeSectionsSahabis.length === 0
+          ? `${SAHABIS.length} sahabînin tamamında kapsamlı hayat bölümleri ve maddeleri mevcut.`
+          : `${missingLifeSectionsSahabis.length} sahabîde hayat bölümü eksik.`
+      },
+      {
+        title: "9. Boş Soru veya Seçenek Kontrolü",
+        status: emptyTextIssues.length === 0 ? "pass" : "fail",
+        detail: emptyTextIssues.length === 0
+          ? "Hiçbir soruda veya seçenekte boş metin bulunmuyor."
+          : `${emptyTextIssues.length} boş soru/seçenek tespit edildi.`
+      },
+      {
+        title: "10. Birebir Tekrarlanan Soru Kontrolü",
+        status: duplicateQuestionTexts.length === 0 ? "pass" : "warn",
+        detail: duplicateQuestionTexts.length === 0
+          ? `${questionTexts.size} sorunun tamamı benzersizdir; birebir tekrar eden soru yoktur.`
+          : `${duplicateQuestionTexts.length} tekrar eden soru metni bulundu.`
+      },
+      {
+        title: "11. Video Bağlantısı Kontrolü",
+        status: missingVideoSahabis.length === 0 ? "pass" : "fail",
+        detail: missingVideoSahabis.length === 0
+          ? "Tüm sahabî kayıtlarında ve sorularda geçerli kaynak video bağlantısı mevcut."
+          : `${missingVideoSahabis.length} kayıtta video bağlantısı eksik.`
+      }
+    ];
+
+    const allPassed = checks.every(c => c.status === "pass");
+    const bannerEl = document.getElementById("summary-banner");
+    bannerEl.innerHTML = `
+      <div class="val-card ${allPassed ? "pass" : "fail"}">
+        <span class="status-pill">${allPassed ? "TÜM KONTROLLER BAŞARILI (YEŞİL)" : "KONTROL UYARISI MEVCUT"}</span>
+        <div class="val-title">Toplam ${SAHABIS.length} Sahabî • ${totalQuestionsCount} Benzersiz Soru • ${SAHABIS.length * 5} İpucu</div>
+        <div class="val-detail">11 doğrulama kriterinin ${checks.filter(c => c.status === "pass").length} tanesi yeşil durumdadır.</div>
+      </div>
+    `;
+
+    const gridEl = document.getElementById("checks-grid");
+    gridEl.innerHTML = checks.map(c => `
+      <div class="val-card ${c.status}">
+        <span class="status-pill">${c.status === "pass" ? "BAŞARILI (YEŞİL)" : c.status === "warn" ? "UYARI (SARI)" : "HATA (KIRMIZI)"}</span>
+        <div class="val-title">${c.title}</div>
+        <div class="val-detail">${c.detail}</div>
+      </div>
+    `).join("");
+  </script>
+</body>
+</html>
